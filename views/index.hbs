@@ -1,0 +1,31 @@
+<h1>Bird Sightings</h1>
+
+<div class="new-bird">
+
+    <h2>Add a New Bird</h2>
+
+    <form method="POST" action="/addBird">
+
+        Name: <input name="name"> <br>
+        Description: <input name="description"><br>
+        Average Eggs: <input name="averageEggs" type="number"><br>
+        Endangered? <input name="endangered" value="true" type="checkbox"><br>
+
+        <button type="submit">Submit</button>
+
+    </form>
+</div>
+
+<!-- displays list of birds -->
+<div class="bird-name-list">
+
+    <h2>Bird List</h2>
+
+    {{#each birds}}
+        <h3>{{this.name}}</h3>
+        <h4>{{this.description}}</h4>
+        <p><a href="/bird/{{this.id}}">{{this.name}} info and sightings</a> </p>
+    {{else}}
+        <P>No birds in the database</P>
+    {{/each}}
+</div>
