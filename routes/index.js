@@ -25,8 +25,19 @@ router.post('/addBird', function (req, res, next) {
       console.log(birdDoc); // helps see what's happening
       res.redirect('/');   // create a request to / to load home page
     }).catch((err) => {
-      next(err); // send error to error handlers
+
+        // check for errors in callback and set flash message for user
+        if (err.name === 'ValidationError') {
+            req.flash('error', err.message);
+            res.redirect('/');
+        }
+
+        else {
+            next(err); // send error to error handlers
+        }
     });
+
+
 });
 
 /* GET info about one bird */
@@ -46,6 +57,27 @@ router.get('/bird/:_id', function (req, res, next) {
         .catch( (err) => {
           next(err);  // 404 and database errors
         });
+});
+
+/* POST a new sighting for a bird */
+router.post('/addSighting', function (req, res, next) {
+
+    // req.body._id query to return the first doc that matches, expects 0 or 1
+    // $push adds new date to the datesSeen array
+    Bird.findOneAndUpdate( { _id: req.body._id }, { $push: { datesSeen: req.body.date } } )
+        .then( (updatedBirdDoc) => {
+            if (updatedBirdDoc) {      // if no doc matching this query, updatedBirdDoc will be undefined
+                res.redirect(`/bird/${req.body._id}`);
+            } else {
+                var err = Error("Adding sighting error, bird not found");
+                err.status = 404;
+                throw err;
+            }
+        })
+        .catch( (err) => {
+            next(err);
+        });
+
 });
 
 module.exports = router;

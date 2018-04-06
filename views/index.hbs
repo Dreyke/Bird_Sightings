@@ -14,6 +14,12 @@
         <button type="submit">Submit</button>
 
     </form>
+
+    <div class="flash-errors">
+        {{#if messages}}
+            <p class="error-message">{{messages.error}}</p>
+        {{/if}}
+    </div>
 </div>
 
 <!-- displays list of birds -->
