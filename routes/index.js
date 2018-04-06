@@ -20,6 +20,12 @@ router.post('/addBird', function (req, res, next) {
   // use form data in req.body to create new bird
     var bird = Bird(req.body);
 
+    // Nest the nes attributes to match the Bird schema
+    bird.nest = {
+        location: req.body.nestLocation,
+        materials: req.body.nestMaterials
+    };
+
     //Save bird object to db as new bird document
     bird.save().then( (birdDoc) => {
       console.log(birdDoc); // helps see what's happening
@@ -47,7 +53,9 @@ router.get('/bird/:_id', function (req, res, next) {
     Bird.findOne( { _id: req.params._id} )
         .then( (birdDoc) => {
           if (birdDoc) {   // if a bird with this id is found
-            console.log(birdDoc); res.render('birdinfo', { title: birdDoc.name, bird:birdDoc} );
+
+              //birdDoc.datesSeen.sort(function (a, b) {return a.getTime() < b.getTime() });
+              res.render('birdinfo', {title : birdDoc.name, bird: birdDoc});
           } else {        // else if bird not found, birdDoc will be undefined
             var err = Error('Bird not found'); // create a new error
             err.status = 404;   // set status to 404
@@ -64,7 +72,12 @@ router.post('/addSighting', function (req, res, next) {
 
     // req.body._id query to return the first doc that matches, expects 0 or 1
     // $push adds new date to the datesSeen array
-    Bird.findOneAndUpdate( { _id: req.body._id }, { $push: { datesSeen: req.body.date } } )
+    // sorts dates as they are added
+    Bird.findOneAndUpdate(
+        { _id: req.body._id },
+        { $push: { datesSeen: { $each: [req.body.date], $sort: -1 } } },
+        { runValidators: true } )
+
         .then( (updatedBirdDoc) => {
             if (updatedBirdDoc) {      // if no doc matching this query, updatedBirdDoc will be undefined
                 res.redirect(`/bird/${req.body._id}`);
@@ -75,7 +88,19 @@ router.post('/addSighting', function (req, res, next) {
             }
         })
         .catch( (err) => {
-            next(err);
+
+            // handle invalid structure dates.
+            if (err.name === 'CastError') {
+                req.flash('error', 'Date must be in a valid format');
+                res.redirect(`/bird/${req.body._id}`);
+            }
+            else if (err.name === 'ValidationError') {
+                req.flash('error', err.message);
+                res.redirect(`/bird/${req.body._id}`);
+            }
+            else {
+                next(err);
+            }
         });
 
 });
